@@ -12,53 +12,6 @@ function extract_timestamp() {
     osmconvert "$file" --out-timestamp
 }
 
-function update_points() {
-    exec_sql_file "point_update.sql"
-}
-
-function update_scaleranks() {
-    exec_sql_file "update_scaleranks.sql"
-}
-
-function create_osm_water_point_table() {
-    exec_sql_file "water_point_table.sql"
-}
-
-function subdivide_polygons() {
-    exec_sql_file "subdivide_polygons.sql"
-}
-
-function update_scaleranks() {
-    exec_sql_file "update_scaleranks.sql"
-}
-
-function create_timestamp_history() {
-    exec_sql "DROP TABLE IF EXISTS $HISTORY_TABLE"
-    exec_sql "CREATE TABLE $HISTORY_TABLE (timestamp timestamp)"
-}
-
-function store_timestamp_history {
-    local timestamp="$1"
-
-    exec_sql "DELETE FROM $HISTORY_TABLE WHERE timestamp='$timestamp'::timestamp"
-    exec_sql "INSERT INTO $HISTORY_TABLE VALUES ('$timestamp'::timestamp)"
-}
-
-function update_timestamp() {
-    local timestamp="$1"
-    store_timestamp_history "$timestamp"
-    exec_sql "SELECT update_timestamp('$timestamp')"
-}
-
-
-function drop_osm_delete_indizes() {
-    exec_sql "SELECT drop_osm_delete_indizes()"
-}
-
-function create_osm_delete_indizes() {
-    exec_sql "SELECT create_osm_delete_indizes()"
-}
-
 function exec_sql() {
 	local sql_cmd="$1"
 	PG_PASSWORD=$OSM_PASSWORD psql \
@@ -84,7 +37,7 @@ function import_pbf_diffs() {
     local pbf_file="$1"
     local diffs_file="$IMPORT_DIR/latest.osc.gz"
 
-    echo "Drop indizes for faster inserts"
+#    echo "Drop indizes for faster inserts"
 #    drop_osm_delete_indizes
 # Lets keep indexes for now
 
@@ -97,24 +50,10 @@ function import_pbf_diffs() {
         -dbschema-import "${DB_SCHEMA}" \
         "$diffs_file"
 
-    # Redo tables that are hard coded in import-sql
-    # vacuum analyze
-    echo "Create osm_water_point table with precalculated centroids"
-#    create_osm_water_point_table
-
-    echo "Update osm_place_polygon with point geometry"
-#    update_points
-
-#    echo "Subdividing polygons in $OSM_DB"
-#    subdivide_polygons
-
     local timestamp=$(extract_timestamp "$diffs_file")
     echo "Set $timestamp for latest updates from $diffs_file"
-#    update_timestamp "$timestamp"
 
-    echo "Create indizes for faster dirty tile calculation"
-#    create_osm_delete_indizes
+    # Redo tables that are hard coded in import-sql
+    # vacuum analyze
 
-#    cleanup_osm_changes
-# vacuum analyze
 }
