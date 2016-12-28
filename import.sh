@@ -3,67 +3,9 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-readonly IMPORT_DATA_DIR=${IMPORT_DATA_DIR:-/data/import}
-readonly IMPOSM_CACHE_DIR=${IMPOSM_CACHE_DIR:-/data/cache}
-readonly MAPPING_JSON=${MAPPING_JSON:-/usr/src/app/mapping.json}
-
+readonly PG_CONNECT="postgis://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST/$POSTGRES_DB"
 readonly DIFFS=${DIFFS:-true}
-
-readonly OSM_DB=${OSM_DB:-osm}
-readonly OSM_USER=${OSM_USER:-osm}
-readonly OSM_PASSWORD=${OSM_PASSWORD:-osm}
-
 readonly DB_SCHEMA=${OSM_SCHEMA:-public}
-readonly DB_HOST=$DB_PORT_5432_TCP_ADDR
-readonly PG_CONNECT="postgis://$OSM_USER:$OSM_PASSWORD@$DB_HOST/$OSM_DB"
-
-readonly HISTORY_TABLE="osm_timestamps"
-
-function download_pbf() {
-    local pbf_url=$1
-	wget -q  --directory-prefix "$IMPORT_DATA_DIR" --no-clobber "$pbf_url"
-}
-
-function import_pbf() {
-    local pbf_file="$1"
-    create_timestamp_history
-    if [ "$DIFFS" = true ]; then
-    echo "Importing in diff mode"
-    imposm3 import \
-        -connection "$PG_CONNECT" \
-        -mapping "$MAPPING_YAML" \
-        -overwritecache \
-        -cachedir "$IMPOSM_CACHE_DIR" \
-        -read "$pbf_file" \
-        -dbschema-import="${DB_SCHEMA}" \
-        -write -optimize -diff
-    else
-    echo "Importing in normal mode"
-    imposm3 import \
-        -connection "$PG_CONNECT" \
-        -mapping "$MAPPING_YAML" \
-        -overwritecache \
-        -cachedir "$IMPOSM_CACHE_DIR" \
-        -read "$pbf_file" \
-        -dbschema-import="${DB_SCHEMA}" \
-        -write -optimize
-    fi
-
-    echo "Create osm_water_point table with precalculated centroids"
-    create_osm_water_point_table
-
-    echo "Update osm_place_polygon with point geometry"
-    update_points
-
-    echo "Subdividing polygons in $OSM_DB"
-    subdivide_polygons
-
-    echo "Update scaleranks from Natural Earth data"
-    update_scaleranks
-
-    local timestamp=$(extract_timestamp "$pbf_file")
-    store_timestamp_history "$timestamp"
-}
 
 function extract_timestamp() {
     local file="$1"
@@ -108,9 +50,6 @@ function update_timestamp() {
     exec_sql "SELECT update_timestamp('$timestamp')"
 }
 
-function enable_delete_tracking() {
-    exec_sql "SELECT enable_delete_tracking()"
-}
 
 function drop_osm_delete_indizes() {
     exec_sql "SELECT drop_osm_delete_indizes()"
@@ -118,22 +57,6 @@ function drop_osm_delete_indizes() {
 
 function create_osm_delete_indizes() {
     exec_sql "SELECT create_osm_delete_indizes()"
-}
-
-function disable_delete_tracking() {
-    exec_sql "SELECT disable_delete_tracking()"
-}
-
-function create_delete_tables() {
-    exec_sql "SELECT create_delete_tables()"
-}
-
-function create_tracking_triggers() {
-    exec_sql "SELECT create_tracking_triggers()"
-}
-
-function cleanup_osm_changes() {
-    exec_sql "SELECT cleanup_osm_tracking_tables()"
 }
 
 function exec_sql() {
@@ -159,45 +82,39 @@ function exec_sql_file() {
 
 function import_pbf_diffs() {
     local pbf_file="$1"
-    local diffs_file="$IMPORT_DATA_DIR/latest.osc.gz"
-
-    echo "Create tracking tables"
-    create_delete_tables
+    local diffs_file="$IMPORT_DIR/latest.osc.gz"
 
     echo "Drop indizes for faster inserts"
-    drop_osm_delete_indizes
-
-    echo "Enable change tracking for deletes and updates"
-    create_tracking_triggers
-    enable_delete_tracking
+#    drop_osm_delete_indizes
+# Lets keep indexes for now
 
     echo "Import changes from $diffs_file"
     imposm3 diff \
         -connection "$PG_CONNECT" \
         -mapping "$MAPPING_YAML" \
         -cachedir "$IMPOSM_CACHE_DIR" \
-        -diffdir "$IMPORT_DATA_DIR" \
+        -diffdir "$IMPORT_DIR" \
         -dbschema-import "${DB_SCHEMA}" \
         "$diffs_file"
 
-    echo "Disable change tracking"
-    disable_delete_tracking
-
+    # Redo tables that are hard coded in import-sql
+    # vacuum analyze
     echo "Create osm_water_point table with precalculated centroids"
-    create_osm_water_point_table
+#    create_osm_water_point_table
 
     echo "Update osm_place_polygon with point geometry"
-    update_points
+#    update_points
 
-    echo "Subdividing polygons in $OSM_DB"
-    subdivide_polygons
+#    echo "Subdividing polygons in $OSM_DB"
+#    subdivide_polygons
 
     local timestamp=$(extract_timestamp "$diffs_file")
     echo "Set $timestamp for latest updates from $diffs_file"
-    update_timestamp "$timestamp"
+#    update_timestamp "$timestamp"
 
     echo "Create indizes for faster dirty tile calculation"
-    create_osm_delete_indizes
+#    create_osm_delete_indizes
 
-    cleanup_osm_changes
+#    cleanup_osm_changes
+# vacuum analyze
 }
