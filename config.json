@@ -1,3 +1,4 @@
 {
-    replication_interval: "1h"
+    "replication_url": "http://planet.openstreetmap.org/replication/daily/",
+    "replication_interval": "1d"
 }
