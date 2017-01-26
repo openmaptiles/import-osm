@@ -9,10 +9,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
-RUN wget https://imposm.org/static/rel/imposm3-0.3.0dev-20170119-353bc5d-linux-x86-64.tar.gz \
-  && tar xvzf imposm3-0.3.0dev-20170119-353bc5d-linux-x86-64.tar.gz \
-  && rm imposm3-0.3.0dev-20170119-353bc5d-linux-x86-64.tar.gz \
-  && ln -s /opt/imposm3-0.3.0dev-20170119-353bc5d-linux-x86-64/imposm3 /usr/bin/imposm3
+RUN wget https://imposm.org/static/rel/imposm3-0.3.0dev-20161216-f4ccff0-linux-x86-64.tar.gz \
+  && tar xvzf imposm3-0.3.0dev-20161216-f4ccff0-linux-x86-64.tar.gz \
+  && rm imposm3-0.3.0dev-20161216-f4ccff0-linux-x86-64.tar.gz \
+  && ln -s /opt/imposm3-0.3.0dev-20161216-f4ccff0-linux-x86-64/imposm3 /usr/bin/imposm3
 
 VOLUME /import /cache /mapping
 ENV IMPORT_DIR=/import \
