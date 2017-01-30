@@ -12,7 +12,6 @@ RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys B97B0AFCAA1A4
       libleveldb-dev \
       libprotobuf-dev \
       osmctools \
-      osmosis \
  # install postgresql client
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       postgresql-client-$PG_MAJOR \

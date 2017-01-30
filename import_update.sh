@@ -16,4 +16,20 @@ function update() {
         -config config.json
 }
 
-update
+function merge_pbf() {
+    pbf=$( ls "$IMPORT_DIR"/*.pbf)
+    while :
+    do
+        if compgen -G "$IMPORT_DIR/*/*/*.osc.gz" > /dev/null; then
+            for change_file in "$IMPORT_DIR/*/*/*.osc.gz";
+            do
+                echo "Updating with $change_file"
+                cp $pbf $pbf.old
+                osmconvert $pbf.old $change_file -o=$pbf
+                rm $pbf.old
+            done
+        fi
+    done
+}
+
+update & merge_pbf
