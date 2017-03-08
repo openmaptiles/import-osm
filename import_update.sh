@@ -16,4 +16,29 @@ function update() {
         -config $CONFIG_JSON
 }
 
-update
+function merge_pbf() {
+    pbf=$( ls "$IMPORT_DIR"/*.pbf | head -n +1)
+    while :
+    do
+        if compgen -G "$IMPORT_DIR/*/*/*.osc.gz" > /dev/null; then
+            for change_file in "$IMPORT_DIR/*/*/*.osc.gz";
+            do
+                while :
+                do
+
+                    if [ ! -f "$IMPORT_DIR/.lock" ]; then
+                        cp $pbf $pbf.old
+                        osmconvert $pbf.old $change_file -o=$pbf
+                        rm $pbf.old
+                        break
+                    else
+                        echo "Lock file $IMPORT_DIR/.lock exists. Remove file to continue updates"
+                        sleep 5
+                    fi
+                done
+            done
+        fi
+    done
+}
+
+update & merge_pbf
