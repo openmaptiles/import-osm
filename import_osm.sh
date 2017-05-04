@@ -26,6 +26,8 @@ function import_pbf() {
         -read "$pbf_file" \
         -deployproduction \
         -write $diff_flag
+
+# vacuum analyze
 }
 
 function import_osm_with_first_pbf() {
