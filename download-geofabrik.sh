@@ -18,9 +18,9 @@ rm -f *.mbtiles
 rm -f *.txt
 rm -f *.yml
 
-download-geofabrik update
+download-geofabrik update --url="https://raw.githubusercontent.com/julien-noblet/download-geofabrik/master/geofabrik.yml"
 download-geofabrik -v download $AREA
- 
+
 ls *.osm.pbf  -la
 osmconvert  --out-statistics  ${AREA}.osm.pbf  > ./osmstat.txt
 
@@ -48,5 +48,3 @@ services:
       MIN_ZOOM: "$QUICKSTART_MIN_ZOOM"
       MAX_ZOOM: "$QUICKSTART_MAX_ZOOM"
 EOM
-
-
