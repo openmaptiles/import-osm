@@ -22,13 +22,9 @@ ENV IMPOSM_VERSION 0.8.1
 RUN go get github.com/julien-noblet/download-geofabrik \
  && go install  github.com/julien-noblet/download-geofabrik \
  && download-geofabrik generate \
- # add  github.com/lukasmartinelli/pgclimb
- && go get github.com/lukasmartinelli/pgclimb \
- && go install github.com/lukasmartinelli/pgclimb \
  # add  github.com/omniscale/imposm3
  && mkdir -p $GOPATH/src/github.com/omniscale/imposm3 \
  && cd  $GOPATH/src/github.com/omniscale/imposm3 \
- && go get github.com/tools/godep \
  # && git clone --quiet --depth 1 https://github.com/omniscale/imposm3 \
  #
  # update to current omniscale/imposm3
